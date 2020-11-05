@@ -1,0 +1,22 @@
+FROM ubuntu:18.04
+
+COPY bin/bash.append /tmp/
+COPY ssh/* /tmp/
+
+RUN apt-get update && apt-get install -y nano locales elinks tree curl wget jq sudo iputils-ping && \
+    apt-get install -y net-tools ssh zip python-minimal scala && \
+    apt-get -y upgrade && apt-get clean && rm -rf /var/cache/apt/archives && \
+    # 建立管理者帳號 superadm
+    useradd -m -s /bin/bash superadm && echo 'superadm:superadm' | chpasswd && \
+    groupadd supboss && usermod -a -G supboss superadm && \
+    echo '%supboss ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers && \
+    cat /tmp/bash.append >> /etc/bash.bashrc && rm /tmp/bash.append && \
+    mkdir -p /opt/bin && mkdir /home/superadm/.ssh && mv /tmp/id_rsa* /home/superadm/.ssh && \
+    mv /tmp/authorized_keys /home/superadm/.ssh && \
+    chown -R superadm:superadm /home/superadm/.ssh && chmod -R 700 /home/superadm/.ssh && \
+    echo 'PermitUserEnvironment yes' >> /etc/ssh/sshd_config && \
+    echo 'StrictHostKeyChecking no' >> /etc/ssh/ssh_config && \
+    locale-gen zh_TW.UTF-8 && sudo passwd -dl root && \
+    rm /etc/update-motd.d/* && echo -e "Ubuntu 18.04 LTS : IP `hostname -I`" >/etc/update-motd.d/00-m
+
+CMD ["/bin/bash"]
