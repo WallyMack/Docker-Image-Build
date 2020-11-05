@@ -1,0 +1,24 @@
+FROM ubuntu:18.04
+
+COPY bin/bash.append /tmp/
+RUN  mkdir /etc/skel/.ssh /opt/bin /opt/www
+COPY ssh/* /etc/skel/.ssh/
+
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get update && apt-get install -y nano locales apt-utils elinks tree curl wget jq psmisc npm && \
+    apt-get install -y openjdk-8-jdk nodejs openssl netcat net-tools ssh zip sudo iputils-ping dnsutils && \
+    # 以下命令會同時安裝 Python2 & Python3
+    apt-get install -y python3 python3-numpy python3-pandas python3-pip && \
+    apt-get -y upgrade && apt-get autoremove -y && apt-get clean && rm -rf /var/cache/apt/archives && \
+    # 安裝 nifi-registry
+    wget http://apache.stu.edu.tw/nifi/nifi-registry/nifi-registry-0.5.0/nifi-registry-0.5.0-bin.tar.gz &&\
+    tar xvzf nifi-registry-0.5.0-bin.tar.gz -C /opt &&\
+    rm nifi-registry-0.5.0-bin.tar.gz &&\
+    # 建立管理者帳號 bdadmin
+    useradd -m -s /bin/bash bdadmin && echo 'bdadmin:V5vz6am3&E' | chpasswd && \
+    echo '%bdadmin ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers && \
+    cat /tmp/bash.append >> /etc/bash.bashrc && rm /tmp/bash.append && \
+    chmod -R 700 /home/bdadmin/.ssh && locale-gen en_US && \
+    locale-gen zh_TW.UTF-8 && locale-gen en_US.UTF-8 && sudo passwd -dl root
+
+CMD ["/bin/bash"]
